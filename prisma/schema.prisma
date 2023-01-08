@@ -1,0 +1,180 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["filteredRelationCount"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AdminLogin {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(User)
+  image     String
+  createdAt DateTime @default(now())
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String     @id @default(uuid())
+  name          String?
+  first_name    String?
+  last_name     String?
+  date_of_birth String?
+  gender        String?
+  email         String?    @unique
+  emailVerified DateTime?
+  image         String     @default("https://res.cloudinary.com/dyvisacbu/image/upload/v1664698266/Hotel%20User%20Image/1664698260709-account_ttr2cd.png")
+  phone_number  Int?       @unique
+  password      String?
+  role          Role       @default(User)
+  Booked        Bookings[]
+  user          Favorite?  @relation("User", fields: [userreviewId], references: [id])
+  userreviewId  String?
+  reviews       Reviews[]
+  favorite      Favorite[] @relation("favorited")
+  message       String?
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime   @default(now())
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Rooms {
+  id               String     @id @default(uuid())
+  name             String
+  image_url        Images[]
+  price            Int
+  bedtype          String[]
+  number_of_guests Int
+  bedrooms         Int
+  beds             Int
+  bathrooms        Int
+  amenities        String[]
+  description      String
+  rating           Decimal?   @db.Decimal(2, 1)
+  room_type        Bookings[]
+  roomFavorite     Favorite[]
+  reviews          Reviews[]
+  createdAt        DateTime   @default(now())
+}
+
+model Images {
+  id            String  @id @default(uuid())
+  name          String
+  url           Json
+  roomImage     Rooms?  @relation(fields: [roomImageById], references: [id])
+  roomImageById String?
+}
+
+model Bookings {
+  id                String   @id @default(uuid())
+  userBy            User     @relation(fields: [userById], references: [id])
+  userById          String
+  createdAt         DateTime @default(now())
+  check_in          String
+  check_out         String
+  roomBy            Rooms?   @relation(fields: [roomsById], references: [id])
+  roomsById         String?
+  toRate            String?  @default("rate")
+  paid              Int
+  number_of_nights  Int
+  payment_intent_id String
+  number_of_guest   Int
+  status            Status   @default(Pending)
+}
+
+model Rides {
+  id          String   @id @default(uuid())
+  name        String
+  image_url   Json
+  price       Int
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Venues {
+  id          String   @id @default(uuid())
+  name        String
+  image_url   Json
+  services    String[]
+  description String
+  createdAt   DateTime @default(now())
+}
+
+model Reviews {
+  id        String   @id @default(uuid())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  comment   String?
+  roomBy    Rooms    @relation(fields: [roomById], references: [id])
+  roomById  String
+  Rate      Int
+  createdAt DateTime @default(now())
+}
+
+model Favorite {
+  id            String @id @default(uuid())
+  favorite      User   @relation("favorited", fields: [favoriteId], references: [id])
+  favoriteId    String
+  user          User[] @relation("User")
+  roomProduct   Rooms  @relation(fields: [roomProductId], references: [id])
+  roomProductId String
+}
+
+enum Role {
+  User
+  Admin
+  SuperAdmin
+}
+
+enum Status {
+  Pending
+  Booked
+  Cancelled
+  Check_In
+  Check_Out
+  Completed
+}
+
+//npx prisma migrate --name anyname

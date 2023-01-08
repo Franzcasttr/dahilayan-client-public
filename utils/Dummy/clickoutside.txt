@@ -1,0 +1,15 @@
+  
+  const dateref = useRef<HTMLDivElement>(null)
+  
+  useEffect(() => {
+    const getClickOutside = (e: MouseEvent) => {
+      if (dateRef.current && !dateRef.current.contains(e.target as Node)) {
+        console.log('called');
+        setSideCalendarOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', getClickOutside);
+    return () => {
+      window.removeEventListener('mousedown', getClickOutside);
+    };
+  }, [sideCalendarOpen]);
